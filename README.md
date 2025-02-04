@@ -1,6 +1,4 @@
-# Samson - Oneiro Task (oneiro-task)
-
-Oneiro Task
+# Samson Millward
 
 ## Install the dependencies
 ```bash
