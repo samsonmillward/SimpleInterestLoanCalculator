@@ -27,44 +27,26 @@
                     min="0" max="100" outlined suffix="%" :rules="[
                         (val) =>
                             (val !== null && val !== '' && val <= 100 && val >= 0) ||
-                            'Please type interest rate between 0 and 100',
+                            'Please type an interest rate between 0 and 100',
                     ]" />
 
                 <q-input filled v-model="userInput.marginInterestRateInput" type="number" label="Margin rate input"
                     min="0" max="100" outlined suffix="%" :rules="[
                         (val) =>
                             (val !== null && val !== '' && val <= 100 && val >= 0) ||
-                            'Please type margin rate between 0 and 100',
+                            'Please type a margin rate between 0 and 100',
                     ]" />
                 <q-btn class="submit-button" color="primary" label="Calculate" :disable="submitButtonDisabled"
                     type="submit" />
             </form>
         </div>
-        <div v-if="outputData.length > 0" class="container-output">
-            <div v-for="data in this.outputData" :key="data" class="output-tables">
-                <q-table :rows="data.output" :columns="columns" :pagination="pagination">
-                    <template v-slot:top>
-                        <q-toolbar>
-                            <h2>Details for the {{ getCurrencySymbol(data.input.currencyInput) }}{{
-                                data.input.loanAmountInput }} loan starting on the {{
-                                    data.input.startDateInput }} and ending on the {{ data.input.endDateInput }}, with {{
-                                    data.input.interestRateInput }}% base interest and {{ data.input.marginInterestRateInput
-                                }}%
-                                margin interest</h2>
-                            <q-space />
-                            <q-btn round icon="edit" @click="editData(data)">
-                                <q-tooltip>Edit data</q-tooltip>
-                            </q-btn>
-                        </q-toolbar>
-                    </template>
-                </q-table>
-            </div>
-        </div>
+        <output-table :outputData="outputData" @edit-data="editData" />
     </div>
 </template>
 
 <script>
 
+import OutputTable from 'src/components/OutputTable.vue';
 export default {
     data() {
         return {
@@ -81,6 +63,9 @@ export default {
             cumulativeInterest: 0,
             pagination: { rowsPerPage: 20 },
         }
+    },
+    components: {
+        OutputTable
     },
     computed: {
         // Disable the submit button if any of the input fields are empty
@@ -109,27 +94,33 @@ export default {
                     label: 'Daily Interest',
                     align: 'left',
                     field: 'dailyInterestNoMargin',
-                    format: (val) => this.getCurrencySymbol(this.userInput.currencyInput) + ' ' + val.toFixed(2),
+                    format: (val) => this.formatCurrencyToTwoDecimalPlaces(val),
                 },
                 {
                     name: 'totalInterestAmountAccrued',
                     label: 'Total Daily Interest Including Margin',
                     align: 'left',
                     field: 'totalInterestAmountAccrued',
-                    format: (val) => this.getCurrencySymbol(this.userInput.currencyInput) + ' ' + val.toFixed(2),
+                    format: (val) => this.formatCurrencyToTwoDecimalPlaces(val),
                 },
                 {
                     name: 'totalInterest',
                     label: 'Total Interest',
                     align: 'left',
                     field: 'totalInterest',
-                    format: (val) => this.getCurrencySymbol(this.userInput.currencyInput) + ' ' + val.toFixed(2),
+                    format: (val) => this.formatCurrencyToTwoDecimalPlaces(val),
                 },
             ]
         },
 
     },
     methods: {
+        // Take the string containing the currency symbol and the value and return the value with two decimal places
+        formatCurrencyToTwoDecimalPlaces(value) {
+            let currencySymbol = value[0]
+            let valueWithoutCurrencySymbol = value.slice(1);
+            return currencySymbol + ' ' + parseFloat(valueWithoutCurrencySymbol).toFixed(2);
+        },
         // Convert the input dates to date objects from strings and calculate the difference in days.
         loanPeriod() {
             let startDateAsDate = new Date(this.userInput.startDateInput);
@@ -179,11 +170,11 @@ export default {
             let temp = [];
             for (let i = 0; i < this.loanPeriod() + 1; i++) {
                 let dailyStats = {
-                    dailyInterestNoMargin: this.getDailyInterestNoMargin(),
-                    totalInterestAmountAccrued: this.dailyInterestInclMargin(),
+                    dailyInterestNoMargin: this.getCurrencySymbol(this.userInput.currencyInput) + ' ' + this.getDailyInterestNoMargin(),
+                    totalInterestAmountAccrued: this.getCurrencySymbol(this.userInput.currencyInput) + ' ' + this.dailyInterestInclMargin(),
                     date: this.calculateDate(i),
                     daysPassed: i,
-                    totalInterest: +(this.cumulativeInterest += this.dailyInterestInclMargin()),
+                    totalInterest: this.getCurrencySymbol(this.userInput.currencyInput) + ' ' + +(this.cumulativeInterest += this.dailyInterestInclMargin()),
                 }
                 temp.push(dailyStats);
             }
