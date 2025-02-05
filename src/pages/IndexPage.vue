@@ -72,55 +72,8 @@ export default {
         submitButtonDisabled() {
             return Object.values(this.userInput).some(value => value === null || value === '');
         },
-
-        columns() {
-            return [
-                {
-                    name: 'date',
-                    label: 'Date',
-                    align: 'left',
-                    field: 'date',
-                    format: (val) => val,
-                },
-                {
-                    name: 'daysPassed',
-                    label: 'Days Passed Since Loan Start',
-                    align: 'left',
-                    field: 'daysPassed',
-                    format: (val) => val,
-                },
-                {
-                    name: 'dailyInterestNoMargin',
-                    label: 'Daily Interest',
-                    align: 'left',
-                    field: 'dailyInterestNoMargin',
-                    format: (val) => this.formatCurrencyToTwoDecimalPlaces(val),
-                },
-                {
-                    name: 'totalInterestAmountAccrued',
-                    label: 'Total Daily Interest Including Margin',
-                    align: 'left',
-                    field: 'totalInterestAmountAccrued',
-                    format: (val) => this.formatCurrencyToTwoDecimalPlaces(val),
-                },
-                {
-                    name: 'totalInterest',
-                    label: 'Total Interest',
-                    align: 'left',
-                    field: 'totalInterest',
-                    format: (val) => this.formatCurrencyToTwoDecimalPlaces(val),
-                },
-            ]
-        },
-
     },
     methods: {
-        // Take the string containing the currency symbol and the value and return the value with two decimal places
-        formatCurrencyToTwoDecimalPlaces(value) {
-            let currencySymbol = value[0]
-            let valueWithoutCurrencySymbol = value.slice(1);
-            return currencySymbol + ' ' + parseFloat(valueWithoutCurrencySymbol).toFixed(2);
-        },
         // Convert the input dates to date objects from strings and calculate the difference in days.
         loanPeriod() {
             let startDateAsDate = new Date(this.userInput.startDateInput);

@@ -1,5 +1,7 @@
 # Samson Millward
 
+## Clone the repository
+
 ## Install the dependencies
 ```bash
 yarn
