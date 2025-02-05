@@ -23,7 +23,7 @@ test('Test that data can be entered and calculate button returns a table', async
 });
 
 test('Test that negative loan value returns an error', async ({ page }) => {
-    await page.getByRole('spinbutton', { name: 'Loan Amount' }).fill('-0');
+    await page.getByRole('spinbutton', { name: 'Loan Amount' }).fill('-10');
     await expect(page.getByText('error')).toBeVisible();
 });
 

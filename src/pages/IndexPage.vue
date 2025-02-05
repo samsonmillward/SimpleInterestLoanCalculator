@@ -15,7 +15,7 @@
                 ]" />
                 <q-input filled v-model="userInput.loanAmountInput" type="number" label="Loan Amount" outlined :rules="[
                     (val) =>
-                        (val !== null && val !== '' && val > 0) ||
+                        (val !== null && val !== '' && val >= 0) ||
                         'Please enter a loan amount',
                 ]" />
                 <q-select v-model="userInput.currencyInput" :options="currencies" label="Currency Select" :rules="[
@@ -39,7 +39,6 @@
                 <q-btn class="submit-button" color="primary" label="Calculate" :disable="submitButtonDisabled"
                     type="submit" />
             </form>
-
         </div>
         <div v-if="outputData.length > 0" class="container-output">
             <div v-for="data in this.outputData" :key="data" class="output-tables">
@@ -62,7 +61,6 @@
             </div>
         </div>
     </div>
-
 </template>
 
 <script>
@@ -73,10 +71,10 @@ export default {
             userInput: {
                 startDateInput: null,
                 endDateInput: null,
-                loanAmountInput: null,
-                currencyInput: null,
-                interestRateInput: null,
-                marginInterestRateInput: null
+                loanAmountInput: 0,
+                currencyInput: '',
+                interestRateInput: 0,
+                marginInterestRateInput: 0
             },
             currencies: ['GBP', 'USD', 'EUR'],
             outputData: [],
@@ -85,8 +83,9 @@ export default {
         }
     },
     computed: {
+        // Disable the submit button if any of the input fields are empty
         submitButtonDisabled() {
-            return !this.userInput.startDateInput || !this.userInput.endDateInput || !this.userInput.loanAmountInput || !this.userInput.currencyInput || !this.userInput.interestRateInput || !this.userInput.marginInterestRateInput;
+            return Object.values(this.userInput).some(value => value === null || value === '');
         },
 
         columns() {
@@ -110,21 +109,21 @@ export default {
                     label: 'Daily Interest',
                     align: 'left',
                     field: 'dailyInterestNoMargin',
-                    format: (val) => val,
+                    format: (val) => this.getCurrencySymbol(this.userInput.currencyInput) + ' ' + val.toFixed(2),
                 },
                 {
                     name: 'totalInterestAmountAccrued',
                     label: 'Total Daily Interest Including Margin',
                     align: 'left',
                     field: 'totalInterestAmountAccrued',
-                    format: (val) => val,
+                    format: (val) => this.getCurrencySymbol(this.userInput.currencyInput) + ' ' + val.toFixed(2),
                 },
                 {
                     name: 'totalInterest',
                     label: 'Total Interest',
                     align: 'left',
                     field: 'totalInterest',
-                    format: (val) => val,
+                    format: (val) => this.getCurrencySymbol(this.userInput.currencyInput) + ' ' + val.toFixed(2),
                 },
             ]
         },
@@ -160,13 +159,13 @@ export default {
             inputContainer.scrollIntoView({ behavior: 'smooth' });
         },
         getDailyInterestNoMargin() {
-            // Principal loan amount * (Interest Rate / 100) / Loan Period to get daily interest,
-            // assuming interest is charged for period of loan rather than yearly
-            return +(this.userInput.loanAmountInput * ((this.userInput.interestRateInput / 100) / this.loanPeriod())).toFixed(2);
+            // Principal loan amount * (Interest Rate / 100) * (Loan Period / 365) / 365 to get daily interest,
+            // assuming interest is charged yearly
+            return +((this.userInput.loanAmountInput * (this.userInput.interestRateInput / 100) * (this.loanPeriod() / 365)) / 365);
         },
-        // Principal loan amount * ((Interest Rate + Margin Rate) / 100) / Loan Period to get daily interest including margin
+        // Principal loan amount * ((Interest Rate + Margin Rate) / 100) * (Loan Period / 365) / 365  to get daily interest including margin
         dailyInterestInclMargin() {
-            return +(this.userInput.loanAmountInput * (((this.userInput.interestRateInput + this.userInput.marginInterestRateInput) / 100) / this.loanPeriod())).toFixed(2);
+            return +((this.userInput.loanAmountInput * ((+this.userInput.interestRateInput + +this.userInput.marginInterestRateInput) / 100) * (this.loanPeriod() / 365)) / 365);
 
         },
         // Calculate the date based on the number of days passed since the loan start date
@@ -178,13 +177,13 @@ export default {
         calculateDailyInterest() {
             this.cumulativeInterest = 0;
             let temp = [];
-            for (let i = 0; i < this.loanPeriod(); i++) {
+            for (let i = 0; i < this.loanPeriod() + 1; i++) {
                 let dailyStats = {
-                    dailyInterestNoMargin: this.getCurrencySymbol(this.userInput.currencyInput) + ' ' + this.getDailyInterestNoMargin(),
-                    totalInterestAmountAccrued: this.getCurrencySymbol(this.userInput.currencyInput) + ' ' + this.dailyInterestInclMargin(),
+                    dailyInterestNoMargin: this.getDailyInterestNoMargin(),
+                    totalInterestAmountAccrued: this.dailyInterestInclMargin(),
                     date: this.calculateDate(i),
-                    daysPassed: i + 1,
-                    totalInterest: this.getCurrencySymbol(this.userInput.currencyInput) + ' ' + +((this.cumulativeInterest += (this.getDailyInterestNoMargin() + this.dailyInterestInclMargin()))).toFixed(2),
+                    daysPassed: i,
+                    totalInterest: +(this.cumulativeInterest += this.dailyInterestInclMargin()),
                 }
                 temp.push(dailyStats);
             }
